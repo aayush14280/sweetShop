@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Sweet Shop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Sweet Shop</h1>
+            <p>Management Dashboard</p>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/inventory" class="nav-link active">
+                    <i class="fas fa-box"></i> Inventory
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/sales" class="nav-link">
+                    <i class="fas fa-chart-line"></i> Sales Reports
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Mobile Toggle Button -->
+    <div class="mobile-toggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h2>Inventory Management</h2>
+            <p>Add, view and manage your sweet inventory</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Add Sweet Form -->
+            <div class="form-container">
+                <h3>Add New Sweet</h3>
+                <form id="addSweetForm">
+                    <div class="form-group">
+                        <label for="addName">Sweet Name</label>
+                        <input type="text" id="addName" placeholder="Enter sweet name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addQuantity">Quantity</label>
+                        <input type="number" id="addQuantity" placeholder="Enter quantity" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPrice">Price ($)</label>
+                        <input type="number" id="addPrice" placeholder="Enter price" min="0.01" step="0.01" required>
+                    </div>
+                    <button type="submit">Add to Inventory</button>
+                    <div id="addMessage" class="success"></div>
+                </form>
+            </div>
+
+            <!-- Sell Sweet Form -->
+            <div class="form-container">
+                <h3>Sell Sweet</h3>
+                <form id="sellSweetForm">
+                    <div class="form-group">
+                        <label for="sellName">Select Sweet</label>
+                        <select id="sellName" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sellQuantity">Quantity</label>
+                        <input type="number" id="sellQuantity" placeholder="Enter quantity to sell" min="1" required>
+                    </div>
+                    <button type="submit">Complete Sale</button>
+                    <div id="sellMessage" class="success"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="panel">
+            <h3>Current Inventory</h3>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Sweet Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile sidebar toggle
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    mainContent.classList.toggle('sidebar-active');
+                });
+            }
+
+            // Fetch inventory data
+            fetchInventory();
+            
+            // Add sweet form submission
+            document.getElementById('addSweetForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('addName').value;
+                const quantity = parseInt(document.getElementById('addQuantity').value);
+                const price = parseFloat(document.getElementById('addPrice').value);
+                
+                fetch('/api/sweets/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, quantity, price })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text) });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('addName').value = '';
+                    document.getElementById('addQuantity').value = '';
+                    document.getElementById('addPrice').value = '';
+                    
+                    // Show success message
+                    const message = document.getElementById('addMessage');
+                    message.textContent = 'Sweet added successfully!';
+                    message.className = 'success';
+                    
+                    // Clear success message after 3 seconds
+                    setTimeout(() => {
+                        message.textContent = '';
+                    }, 3000);
+                    
+                    fetchInventory();
+                })
+                .catch(error => {
+                    const message = document.getElementById('addMessage');
+                    message.textContent = error.message;
+                    message.className = 'error';
+                });
+            });
+            
+            // Sell sweet form submission
+            document.getElementById('sellSweetForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('sellName').value;
+                const quantity = parseInt(document.getElementById('sellQuantity').value);
+                
+                fetch('/api/sweets/sell', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, quantity })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text) });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('sellName').selectedIndex = 0;
+                    document.getElementById('sellQuantity').value = '';
+                    
+                    // Show success message
+                    const message = document.getElementById('sellMessage');
+                    message.textContent = 'Sale completed successfully!';
+                    message.className = 'success';
+                    
+                    // Clear success message after 3 seconds
+                    setTimeout(() => {
+                        message.textContent = '';
+                    }, 3000);
+                    
+                    fetchInventory();
+                })
+                .catch(error => {
+                    const message = document.getElementById('sellMessage');
+                    message.textContent = error.message;
+                    message.className = 'error';
+                });
+            });
+        });
+
+        // Fetch inventory and update UI
+        function fetchInventory() {
+            fetch('/api/inventory')
+                .then(response => response.json())
+                .then(data => {
+                    updateInventoryTable(data);
+                    updateSellSweetDropdown(data);
+                })
+                .catch(error => console.error('Error fetching inventory:', error));
+        }
+        
+        // Update inventory table
+function updateInventoryTable(inventory) {
+    const tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = '';
+    
+    if (!inventory || Object.keys(inventory).length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.textContent = 'No items in inventory';
+        cell.style.textAlign = 'center';
+        cell.style.padding = '1.5rem';
+        cell.style.color = 'var(--text-light)';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+    }
+    
+    for (const name in inventory) {
+        const item = inventory[name];
+        const row = document.createElement('tr');
+        
+        const nameCell = document.createElement('td');
+        nameCell.textContent = name;
+        
+        const quantityCell = document.createElement('td');
+        quantityCell.textContent = item.quantity;
+        
+        const priceCell = document.createElement('td');
+        priceCell.textContent = `$${item.price.toFixed(2)}`;
+        
+        const totalCell = document.createElement('td');
+        totalCell.textContent = `$${(item.quantity * item.price).toFixed(2)}`;
+        
+        row.appendChild(nameCell);
+        row.appendChild(quantityCell);
+        row.appendChild(priceCell);
+        row.appendChild(totalCell);
+        
+        tbody.appendChild(row);
+    }
+}
+        
+        // Update sell sweet dropdown
+        function updateSellSweetDropdown(inventory) {
+            const select = document.getElementById('sellName');
+            select.innerHTML = '';
+            
+            if (Object.keys(inventory).length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No sweets available';
+                option.disabled = true;
+                select.appendChild(option);
+                return;
+            }
+            
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select a sweet';
+            defaultOption.selected = true;
+            defaultOption.disabled = true;
+            select.appendChild(defaultOption);
+            
+            for (const name in inventory) {
+                if (inventory[name].quantity > 0) {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = `${name} (${inventory[name].quantity} available)`;
+                    select.appendChild(option);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

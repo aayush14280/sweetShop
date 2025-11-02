@@ -1,0 +1,23 @@
+{
+  "name": "sweet-shop",
+  "version": "1.0.0",
+  "description": "SweetShop inventory and sales management system",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watchAll"
+  },
+  "keywords": [
+    "sweet-shop",
+    "inventory",
+    "sales"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.5.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

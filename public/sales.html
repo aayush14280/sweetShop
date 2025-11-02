@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Reports - Sweet Shop</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Sweet Shop</h1>
+            <p>Management Dashboard</p>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/inventory" class="nav-link">
+                    <i class="fas fa-box"></i> Inventory
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/sales" class="nav-link active">
+                    <i class="fas fa-chart-line"></i> Sales Reports
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Mobile Toggle Button -->
+    <div class="mobile-toggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h2>Sales Reports</h2>
+            <p>View and analyze your sales data</p>
+        </div>
+
+        <!-- Sales Summary -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <h3>Total Sales</h3>
+                <div class="value">$<span id="total-sales">0.00</span></div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Transactions</h3>
+                <div class="value" id="total-transactions">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Average Sale Value</h3>
+                <div class="value">$<span id="avg-sale">0.00</span></div>
+            </div>
+            <div class="stat-card">
+                <h3>Best Selling Item</h3>
+                <div class="value" id="best-seller">-</div>
+            </div>
+        </div>
+
+        <!-- Sales Charts -->
+        <div class="dashboard-grid">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Sales by Item</h3>
+                </div>
+                <canvas id="sales-by-item-chart" class="chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Revenue by Item</h3>
+                </div>
+                <canvas id="revenue-by-item-chart" class="chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sales Table -->
+        <div class="panel">
+            <h3>Sales Transactions</h3>
+            <table id="salesTable">
+                <thead>
+                    <tr>
+                        <th>Sweet</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile sidebar toggle
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    mainContent.classList.toggle('sidebar-active');
+                });
+            }
+
+            // Fetch sales data
+            fetchSalesData();
+        });
+
+        // Fetch sales data
+        function fetchSalesData() {
+            fetch('/api/sales')
+                .then(response => response.json())
+                .then(data => {
+                    updateSalesStats(data);
+                    updateSalesTable(data.sales || []);
+                    updateSalesCharts(data.sales || []);
+                })
+                .catch(error => console.error('Error fetching sales data:', error));
+        }
+
+        // Update sales statistics
+        function updateSalesStats(data) {
+            const sales = data.sales || [];
+            const totalSales = data.totalSales || 0;
+            const totalTransactions = sales.length;
+            
+            document.getElementById('total-sales').textContent = totalSales.toFixed(2);
+            document.getElementById('total-transactions').textContent = totalTransactions;
+            
+            // Calculate average sale value
+            const avgSale = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+            document.getElementById('avg-sale').textContent = avgSale.toFixed(2);
+            
+            // Find best selling item
+            if (sales.length > 0) {
+                const itemSales = {};
+                sales.forEach(sale => {
+                    if (!itemSales[sale.name]) {
+                        itemSales[sale.name] = 0;
+                    }
+                    itemSales[sale.name] += sale.quantity;
+                });
+                
+                let bestSeller = '';
+                let maxQuantity = 0;
+                
+                for (const item in itemSales) {
+                    if (itemSales[item] > maxQuantity) {
+                        maxQuantity = itemSales[item];
+                        bestSeller = item;
+                    }
+                }
+                
+                document.getElementById('best-seller').textContent = bestSeller || '-';
+            }
+        }
+
+        // Update sales table
+        function updateSalesTable(sales) {
+            const tbody = document.querySelector('#salesTable tbody');
+            tbody.innerHTML = '';
+            
+            if (sales.length === 0) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.textContent = 'No sales recorded';
+                cell.style.textAlign = 'center';
+                cell.style.padding = '1.5rem';
+                cell.style.color = 'var(--text-light)';
+                row.appendChild(cell);
+                tbody.appendChild(row);
+                return;
+            }
+            
+            sales.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = sale.name;
+                
+                const quantityCell = document.createElement('td');
+                quantityCell.textContent = sale.quantity;
+                
+                const priceCell = document.createElement('td');
+                priceCell.textContent = `$${sale.price.toFixed(2)}`;
+                
+                const totalCell = document.createElement('td');
+                totalCell.textContent = `$${(sale.price * sale.quantity).toFixed(2)}`;
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = new Date(sale.date).toLocaleString();
+                
+                row.appendChild(nameCell);
+                row.appendChild(quantityCell);
+                row.appendChild(priceCell);
+                row.appendChild(totalCell);
+                row.appendChild(dateCell);
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update sales charts
+        function updateSalesCharts(sales) {
+            // Clear existing charts if they exist
+            const salesByItemChart = Chart.getChart('sales-by-item-chart');
+            if (salesByItemChart) salesByItemChart.destroy();
+            
+            const revenueByItemChart = Chart.getChart('revenue-by-item-chart');
+            if (revenueByItemChart) revenueByItemChart.destroy();
+            
+            // Create default data if no sales
+            if (!sales || sales.length === 0) {
+                // Create placeholder data for empty charts
+                const placeholderItems = ['No Sales Data'];
+                const placeholderValues = [1];
+                const placeholderColor = ['rgba(200, 200, 200, 0.5)'];
+                
+                // Sales by item chart - placeholder
+                const salesByItemCtx = document.getElementById('sales-by-item-chart').getContext('2d');
+                new Chart(salesByItemCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: placeholderItems,
+                        datasets: [{
+                            label: 'No Sales Data Available',
+                            data: placeholderValues,
+                            backgroundColor: placeholderColor,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                display: false
+                            },
+                            x: {
+                                display: false
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        }
+                    }
+                });
+                
+                // Revenue by item chart - placeholder
+                const revenueByItemCtx = document.getElementById('revenue-by-item-chart').getContext('2d');
+                new Chart(revenueByItemCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: placeholderItems,
+                        datasets: [{
+                            data: placeholderValues,
+                            backgroundColor: placeholderColor,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'No sales data available';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                return;
+            }
+            
+            // Aggregate sales data by item
+            const itemData = {};
+            
+            sales.forEach(sale => {
+                if (!itemData[sale.name]) {
+                    itemData[sale.name] = {
+                        quantity: 0,
+                        revenue: 0
+                    };
+                }
+                
+                itemData[sale.name].quantity += sale.quantity;
+                // Use totalAmount if available, otherwise calculate from price and quantity
+                if (sale.totalAmount) {
+                    itemData[sale.name].revenue += sale.totalAmount;
+                } else if (sale.price) {
+                    itemData[sale.name].revenue += sale.price * sale.quantity;
+                }
+            });
+            
+            const items = Object.keys(itemData);
+            const quantities = items.map(item => itemData[item].quantity);
+            const revenues = items.map(item => itemData[item].revenue);
+            
+            // Create color array
+            const colors = [
+                'rgba(99, 102, 241, 0.7)',
+                'rgba(244, 63, 94, 0.7)',
+                'rgba(16, 185, 129, 0.7)',
+                'rgba(245, 158, 11, 0.7)',
+                'rgba(139, 92, 246, 0.7)'
+            ];
+            
+            // Ensure we have enough colors
+            while (colors.length < items.length) {
+                colors.push(...colors);
+            }
+            
+            // Sales by item chart
+            const salesByItemCtx = document.getElementById('sales-by-item-chart').getContext('2d');
+            new Chart(salesByItemCtx, {
+                type: 'bar',
+                data: {
+                    labels: items,
+                    datasets: [{
+                        label: 'Units Sold',
+                        data: quantities,
+                        backgroundColor: colors.slice(0, items.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Revenue by item chart
+            const revenueByItemCtx = document.getElementById('revenue-by-item-chart').getContext('2d');
+            new Chart(revenueByItemCtx, {
+                type: 'pie',
+                data: {
+                    labels: items,
+                    datasets: [{
+                        data: revenues,
+                        backgroundColor: colors.slice(0, items.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    return `$${value.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
