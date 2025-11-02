@@ -1,13 +1,12 @@
 # SweetShop
-
 A JavaScript implementation of a sweet shop inventory and sales management system built using Test-Driven Development (TDD) principles for the Incubyte AI Kata assessment.
 
 ## Project Structure
-
 ```
 sweetShopJavaScript/
 ├── src/
-│   └── SweetShop.js       # Main SweetShop class implementation
+│   ├── SweetShop.js       # Main SweetShop class implementation
+│   └── server.js          # Server entry point
 ├── tests/
 │   └── SweetShop.test.js  # Jest tests for SweetShop class
 ├── package.json           # Project configuration and dependencies
@@ -15,7 +14,6 @@ sweetShopJavaScript/
 ```
 
 ## Features
-
 - Add or update sweets in inventory with name, quantity, and price
 - Sell sweets from inventory and record sales transactions
 - Get current inventory status
@@ -23,39 +21,39 @@ sweetShopJavaScript/
 - Input validation and error handling
 
 ## TDD Workflow
-
 This project was developed using Test-Driven Development:
-
 1. **Write a failing test**: Tests were written first to define the expected behavior
 2. **Implement the code**: Code was written to make the tests pass
 3. **Refactor**: Code was improved while ensuring tests still pass
 4. **Repeat**: The process was repeated for each feature
 
 ## Setup
-
 1. Clone the repository
 2. Install dependencies:
-
 ```bash
 npm install
+```
+
+## Running the Application
+
+To run the sweet shop server:
+```bash
+node src/server.js
 ```
 
 ## Running Tests
 
 Run tests once:
-
 ```bash
 npm test
 ```
 
 Run tests in watch mode (automatically re-runs when files change):
-
 ```bash
 npm run test:watch
 ```
 
 ## Usage Example
-
 ```javascript
 const SweetShop = require('./src/SweetShop');
 
@@ -81,9 +79,7 @@ console.log(salesReport);
 ## API Reference
 
 ### `addSweet(name, quantity, price)`
-
 Adds or updates a sweet in the inventory.
-
 - **Parameters**:
   - `name` (string): Name of the sweet
   - `quantity` (number): Quantity to add
@@ -92,9 +88,7 @@ Adds or updates a sweet in the inventory.
 - **Throws**: Error if inputs are invalid
 
 ### `sellSweet(name, quantity)`
-
 Sells a sweet from inventory.
-
 - **Parameters**:
   - `name` (string): Name of the sweet
   - `quantity` (number): Quantity to sell
@@ -102,13 +96,9 @@ Sells a sweet from inventory.
 - **Throws**: Error if sweet doesn't exist or insufficient quantity
 
 ### `getInventory()`
-
 Gets current inventory.
-
 - **Returns**: Object with current inventory
 
 ### `getSalesReport()`
-
 Gets sales report.
-
-- **Returns**: Object with total sales and transactions
+- **Returns**: Object with total sales and transaction history
