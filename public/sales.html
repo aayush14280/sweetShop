@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-R">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Reports - Sweet Shop</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h1>Sweet Shop</h1>
@@ -35,19 +34,16 @@
         </ul>
     </div>
 
-    <!-- Mobile Toggle Button -->
     <div class="mobile-toggle">
         <i class="fas fa-bars"></i>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="page-header">
             <h2>Sales Reports</h2>
             <p>View and analyze your sales data</p>
         </div>
 
-        <!-- Sales Summary -->
         <div class="dashboard-grid">
             <div class="stat-card">
                 <h3>Total Sales</h3>
@@ -67,7 +63,6 @@
             </div>
         </div>
 
-        <!-- Sales Charts -->
         <div class="dashboard-grid">
             <div class="chart-container">
                 <div class="chart-header">
@@ -83,7 +78,6 @@
             </div>
         </div>
 
-        <!-- Sales Table -->
         <div class="panel">
             <h3>Sales Transactions</h3>
             <table id="salesTable">
@@ -202,10 +196,12 @@
                 totalCell.textContent = `$${(sale.price * sale.quantity).toFixed(2)}`;
                 
                 const dateCell = document.createElement('td');
-                dateCell.textContent = new Date(sale.date).toLocaleString();
+                // --- THIS IS THE FIX ---
+                // Changed sale.date to sale.timestamp
+                dateCell.textContent = new Date(sale.timestamp).toLocaleString();
                 
                 row.appendChild(nameCell);
-                row.appendChild(quantityCell);
+row.appendChild(quantityCell);
                 row.appendChild(priceCell);
                 row.appendChild(totalCell);
                 row.appendChild(dateCell);
